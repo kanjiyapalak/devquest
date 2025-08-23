@@ -1,0 +1,34 @@
+# Node
+node_modules/
+
+# Build outputs
+client/dist/
+client/build/
+server/dist/
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+logs/
+*.log
+
+# Env
+.env
+.env.*
+server/.env
+client/.env
+
+# IDE
+.vscode/
+.idea/
+.DS_Store
+
+# Temp
+server/temp/
+client/temp/
+*-temp/
+*.tmp
+
+# OS
+Thumbs.db
