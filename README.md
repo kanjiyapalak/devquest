@@ -1,6 +1,6 @@
 # DevQuest
 
-DevQuest is a full‑stack learning platform that blends MCQs and DSA coding quests with XP, levels, and badges.
+DevQuest (aka "Devquest") is a full‑stack learning platform that blends MCQs and DSA coding quests with XP, levels, and badges.
 
 ## Features
 - MCQ quests with level‑based XP
