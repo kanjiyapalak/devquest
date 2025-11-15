@@ -49,8 +49,71 @@
   --btn-success-hover: #00a884;
   --btn-warning: #fdcb6e;
   --btn-warning-hover: #ffb142;
-/* Admin Page Styles - Same as Landing Page */
 }
+
+/* === Admin Theme Alignment with User Pages (overrides) === */
+/* Tokens */
+:root {
+  --primary: #8b5cf6;
+  --primary-dark: #4f46e5;
+  --primary-light: #e0e7ff;
+  --accent: #a855f7;
+  --text: #1f2937;
+  --text-light: #6b7280;
+  --border: #e5e7eb;
+  --bg: #f7f9fc;
+}
+
+/* Base and layout */
+body { background: #f7f7fb; color: var(--text); }
+.admin-container { background: var(--bg); }
+.admin-main { background: var(--bg); margin: 0; border-top-left-radius: 0; box-shadow: none; }
+.admin-content { background: var(--bg); padding: 24px; }
+
+/* Sidebar to match darker user nav tone */
+.admin-sidebar { width: 260px; background: #0f172a; color: #e2e8f0; border-right: 1px solid #111827; padding-top: 16px; }
+.admin-logo { display: flex; align-items: center; gap: 10px; padding: 8px 16px; background: transparent; border: 0; }
+.admin-logo h2 { color: #e2e8f0; font-size: 18px; font-weight: 800; -webkit-text-fill-color: initial; }
+
+/* Nav links */
+.admin-nav { display: flex; flex-direction: column; gap: 6px; padding: 6px 8px; }
+.nav-link { display: flex; align-items: center; gap: 10px; color: #cbd5e1; padding: 10px 12px; border-radius: 10px; text-decoration: none; }
+.nav-link:hover, .nav-link.active { background: #172036; color: #fff; }
+.nav-icon { opacity: 0.95; }
+
+/* Header */
+.admin-header { background: #ffffff; border-bottom: 1px solid #eef2f7; box-shadow: 0 10px 20px rgba(16,24,40,.06); padding: 14px 22px; }
+.header-left h1 { color: #0f172a; font-weight: 800; font-size: 20px; -webkit-text-fill-color: initial; background: none; }
+.admin-avatar { border-color: #c7d2fe; }
+
+/* Cards and tables */
+.dashboard-card, .users-table-container, .admin-actions, .stat-card, .profile-container, .access-item, .quest-card {
+  background: #fff;
+  border: 1px solid var(--border);
+  box-shadow: 0 2px 12px rgba(139, 92, 246, 0.06);
+  border-radius: 12px;
+}
+.dashboard-card:hover { box-shadow: 0 6px 24px rgba(139, 92, 246, 0.15); transform: translateY(-2px); }
+.users-table th { background: var(--primary-light); color: #4f46e5; }
+
+/* Buttons */
+.search-button, .submit-btn, .create-quest-btn {
+  background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%);
+  color: #fff;
+}
+.search-button:hover, .submit-btn:hover, .create-quest-btn:hover {
+  filter: brightness(1.05);
+}
+.action-btn { border: 1px solid #e5e7eb; background: #f9fafb; }
+.action-btn:hover { background: #eef2ff; border-color: #c7d2fe; }
+
+/* Accents */
+.users-card .card-icon, .card-icon { background: #8b5cf6; color: #fff; }
+.quests-card .card-icon { background: #10b981; }
+.quest-card-footer .action-btn { background: #8b5cf6; color: #fff; border: none; }
+.quest-card-footer .action-btn:hover { background: #a855f7; }
+
+/* Admin Page Styles - Same as Landing Page */
 
 /* Base Styles */
 * {
@@ -123,6 +186,7 @@ body {
   margin: 0;
   background: linear-gradient(90deg, #ffffff, #a29bfe);
   -webkit-background-clip: text;
+  background-clip: text;
   -webkit-text-fill-color: transparent;
   font-size: 1.8rem;
   font-weight: 700;
@@ -144,7 +208,13 @@ body {
   background: linear-gradient(90deg, #a29bfe, #6c5ce7);
   border-radius: 3px;
   transition: width 0.3s ease;
+/* Admin Page Styles - Same as Landing Page */
 }
+/* Final Override Block for Theme Alignment */
+body {
+  background: #f7f9fc;
+}
+/* Additional styles can be added here */
 
 .admin-logo:hover h2::after {
   width: 80px;
@@ -1382,29 +1452,86 @@ body {
   line-height: 1.5;
 }
 
-/* Responsive Adjustments */
-@media (max-width: 768px) {
-  .admin-container {
-    flex-direction: column;
-  }
-  
-  .admin-sidebar {
-    width: 100%;
-    height: auto;
-    padding: 1rem 0;
-  }
-  
-  .admin-nav {
-    display: flex;
-    overflow-x: auto;
-    padding: 0 1rem;
-  }
-  
-  .nav-link {
-    white-space: nowrap;
-  }
-  
-  .admin-stats {
-    grid-template-columns: 1fr;
-  }
+/* Admin sidebar: rounded container and pill active links matching user theme */
+.admin-container { padding: 12px; }
+.admin-sidebar {
+  background: #0B1223; /* slightly softer than #0f172a */
+  border: 1px solid rgba(255,255,255,0.06);
+  border-radius: 16px;
+  box-shadow: 0 12px 30px rgba(2,6,23,0.35) inset, 0 8px 24px rgba(2,6,23,0.18);
+  min-height: calc(100vh - 24px);
 }
+
+/* brand */
+.admin-logo { padding: 14px 16px 10px; }
+.admin-logo h2 { color: #E5E7EB; letter-spacing: -0.2px; }
+
+/* nav items */
+.admin-nav { padding: 8px; }
+.nav-link {
+  background: transparent;
+  border: 1px solid rgba(255,255,255,0.06);
+  border-radius: 14px;
+  padding: 12px 14px;
+  margin: 6px 6px;
+  color: #C7D2FE;
+}
+.nav-link:hover { background: rgba(255,255,255,0.06); color:#fff; }
+.nav-link.active {
+  background: linear-gradient(180deg, rgba(255,255,255,0.10) 0%, rgba(255,255,255,0.06) 100%);
+  border-color: rgba(255,255,255,0.12);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.06), 0 8px 20px rgba(0,0,0,0.25);
+}
+.nav-icon { color: #9DB4FF; }
+
+/* quick stats card example in screenshot */
+.quick-stats {
+  margin: 16px 12px 0;
+  background: #0B1223;
+  border: 1px solid rgba(255,255,255,0.06);
+  border-radius: 14px;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.04), 0 10px 20px rgba(0,0,0,0.2);
+  padding: 14px 16px;
+}
+.quick-stats .title { color: #93C5FD; font-weight: 700; }
+.quick-stats .value { color: #E5E7EB; font-weight: 700; }
+
+/* Simplify nav hover: no transform, no heavy shadows */
+.nav-link { transition: color .15s ease, background-color .15s ease, border-color .15s ease; }
+.nav-link:hover { background: rgba(255,255,255,0.06); box-shadow: none; }
+
+/* Admin heading uses user dashboard theme colors */
+.admin-title {
+  color: #1f2937; /* slate-800 */
+  font-weight: 800;
+  letter-spacing: -0.015em;
+}
+
+/* If you also want a gradient accent underline like user pages, uncomment:
+.admin-title {
+  background: linear-gradient(135deg, #8b5cf6 0%, #a855f7 100%);
+  -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
+}
+*/
+
+/* Make button.nav-link look like other links */
+.nav-link { border: 1px solid rgba(255,255,255,0.06); }
+button.nav-link { width: 100%; text-align: left; background: transparent; border: 1px solid rgba(255,255,255,0.06); }
+button.nav-link:hover { background: rgba(255,255,255,0.06); }
+
+/* === Manage Quests: Edit/Delete buttons (aligned with user buttons) === */
+.aq-actions { display:flex; gap:8px; margin-top:4px; }
+.aq-btn {
+  display:inline-flex; align-items:center; justify-content:center;
+  height:40px; padding:0 14px; border-radius:10px; border:1px solid transparent; cursor:pointer;
+  font-weight:700; background: transparent; text-decoration:none;
+  transition: background-color .15s ease, border-color .15s ease, color .15s ease, transform .15s ease;
+}
+.aq-btn svg { margin-right:8px; }
+.aq-btn:active { transform: translateY(0); }
+/* Transparent variants */
+.aq-btn.edit { color:#2563eb; border-color:#bfdbfe; }
+.aq-btn.edit:hover { background: rgba(59,130,246,.08); border-color:#93c5fd; }
+.aq-btn.delete { color:#ef4444; border-color:#fecaca; min-width:56px; }
+.aq-btn.delete:hover { background: rgba(239,68,68,.08); border-color:#fca5a5; }
+.aq-btn.delete svg { margin-right:0; }

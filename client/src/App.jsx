@@ -16,6 +16,7 @@ import Users from './pages/admin/Users';
 import Quests from './pages/admin/Quests';
 import Quest from './pages/Quest';
 import ReviewQuest from './pages/ReviewQuest';
+// Removed SavedQuest page as generated quests are no longer stored/displayed
 
 // ✅ Protected route wrapper - requires authentication
 const ProtectedRoute = ({ children, adminOnly = false }) => {
@@ -70,6 +71,7 @@ export default function App() {
           <Route path="/help" element={<Help />} />
           <Route path="/activity" element={<Activity />} />
           <Route path="/quest/:id" element={<Quest />} />
+          {/* Saved quests route removed */}
           <Route path="/code/:id" element={<Home />} />
           <Route path="/review/:id" element={<ReviewQuest />} />
         </Route>

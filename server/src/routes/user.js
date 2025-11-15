@@ -7,6 +7,8 @@ import Badge from '../models/Badge.js';
 import UserBadge from '../models/UserBadge.js';
 import UserActivity from '../models/UserActivity.js';
 import UserCodingSubmission from '../models/UserCodingSubmission.js';
+// Generated quests persistence removed – we no longer store generated MCQ/coding content
+import UserMCQSubmission from '../models/UserMCQSubmission.js';
 import OpenAI from 'openai';
 import { InferenceClient } from '@huggingface/inference';
 import dotenv from 'dotenv';
@@ -234,7 +236,8 @@ function nextLevelFromProgress(topic, progress) {
 async function generateCodingQuest({ title, level, scope }) {
   const HF_TOKEN = process.env.HF_TOKEN;
   if (!HF_TOKEN) throw new Error('HF_TOKEN is not set');
-  const client = new InferenceClient(HF_TOKEN);
+  // Use OpenAI-compatible HF Router for chat completions (avoids Hub provider mapping lookups)
+  const oa = new OpenAI({ baseURL: 'https://router.huggingface.co/v1', apiKey: HF_TOKEN });
   const q = `
 Generate a LeetCode-style coding question for the topic "${title}".
 Constraints:
@@ -268,7 +271,11 @@ Explanation: <explanation2>
  - ORDER keys in the JSON so sizes appear before data (stdin reading order).
  - Keep all Input and Expected strictly valid JSON. No markdown, no backticks.
 `;
-  const chat = await client.chatCompletion({ model: 'mistralai/Mistral-Nemo-Instruct-2407', provider: 'nebius', messages: [{ role: 'user', content: q }] });
+  const chat = await oa.chat.completions.create({
+    model: 'openai/gpt-oss-120b:together',
+    messages: [{ role: 'user', content: q }],
+    temperature: 0.25
+  });
   let output = chat.choices?.[0]?.message?.content || '';
   output = output.replace(/\*\*/g, '').replace(/`/g, '').trim();
   const problemMatch = output.match(/Problem:\s*([\s\S]*?)(?=\s*Function Signatures:|$)/i);
@@ -294,7 +301,70 @@ Explanation: <explanation2>
   while ((m = tcRegex.exec(tcBlock)) !== null) {
     testCases.push({ input: m[1].trim(), expected: m[2].trim(), explanation: m[3].trim() });
   }
-  return { problem, functionSignatures, testCases, raw: output };
+  // Sanitize test cases: fix size fields (n/rows/cols) and order keys (sizes first)
+  function sanitizeInputJsonString(s) {
+    try {
+      const obj = JSON.parse(s);
+      const fixSizes = (o) => {
+        const keys = Object.keys(o);
+        const out = {};
+        const hasNums = Array.isArray(o.nums);
+        const hasArr = Array.isArray(o.arr);
+        const hasArray = Array.isArray(o.array);
+        const hasMatrix = Array.isArray(o.matrix) && Array.isArray((o.matrix[0] || []));
+        const hasStr = typeof o.s === 'string';
+        if (hasNums) o.n = o.n != null ? Number(o.n) : o.nums.length, o.n = o.nums.length;
+        if (hasArr) o.n = o.n != null ? Number(o.n) : o.arr.length, o.n = o.arr.length;
+        if (hasArray) o.n = o.n != null ? Number(o.n) : o.array.length, o.n = o.array.length;
+        if (hasStr) o.n = o.n != null ? Number(o.n) : o.s.length, o.n = o.s.length;
+        if (hasMatrix) {
+          o.rows = o.rows != null ? Number(o.rows) : o.matrix.length;
+          const firstRow = Array.isArray(o.matrix[0]) ? o.matrix[0] : [];
+          o.cols = o.cols != null ? Number(o.cols) : firstRow.length;
+          o.rows = o.matrix.length;
+          o.cols = firstRow.length;
+        }
+        const sizeOrder = ['n', 'rows', 'cols'];
+        for (const k of sizeOrder) if (k in o) out[k] = o[k];
+        for (const k of keys) if (!(k in out)) out[k] = o[k];
+        return out;
+      };
+      const fixed = fixSizes(obj);
+      return JSON.stringify(fixed);
+    } catch {
+      return s;
+    }
+  }
+  const sanitized = testCases.map(tc => ({ input: sanitizeInputJsonString(tc.input), expected: tc.expected, explanation: tc.explanation }));
+  // Optional: correct expected outputs for known patterns
+  function detectAndFixExpected(problemText, tcArr) {
+    const txt = String(problemText || '').toLowerCase();
+    const isLongestConsecutive = /longest\s+consecutive/.test(txt);
+    const fix = (tc) => {
+      const inputStr = sanitizeInputJsonString(tc.input);
+      let expectedStr = tc.expected;
+      if (isLongestConsecutive) {
+        try {
+          const obj = JSON.parse(inputStr);
+          const nums = Array.isArray(obj.nums) ? obj.nums : (Array.isArray(obj.arr) ? obj.arr : (Array.isArray(obj.array) ? obj.array : []));
+          const set = new Set(nums);
+          let best = 0;
+          for (const x of set) {
+            if (!set.has(x - 1)) {
+              let cur = x, len = 1;
+              while (set.has(cur + 1)) { cur++; len++; }
+              if (len > best) best = len;
+            }
+          }
+          expectedStr = JSON.stringify({ ans: best });
+        } catch {}
+      }
+      return { input: inputStr, expected: expectedStr, explanation: tc.explanation };
+    };
+    return tcArr.map(fix);
+  }
+  const corrected = detectAndFixExpected(problem, sanitized);
+  return { problem, functionSignatures, testCases: corrected, raw: output };
 }
 
 // POST /api/user/quests/start  { topicId }
@@ -323,6 +393,8 @@ router.post('/quests/start', auth, async (req, res) => {
 
     const questions = await generateMCQs({ title: topic.title, description: levelInfo.description || topic.description, level, count });
     if (!questions?.length) return res.status(500).json({ message: 'Failed to generate questions' });
+
+    // Do not persist generated MCQ content
 
     return res.json({ topicId, level, xp, questions, topic: { title: topic.title } });
   } catch (err) {
@@ -368,6 +440,7 @@ router.post('/quests/start-coding', auth, async (req, res) => {
 
   const quest = await generateCodingQuest({ title: topic.title, level, scope });
     if (!quest?.problem) return res.status(500).json({ message: 'Failed to generate coding quest' });
+    // Do not persist generated coding content
   // XP metadata for UI
   const levelInfo2 = (topic.levels || []).find(l => Number(l.level) === Number(level)) || { xpRequired: 25 };
   const levelXP = Number(levelInfo2.xpRequired || 25);
@@ -381,10 +454,12 @@ router.post('/quests/start-coding', auth, async (req, res) => {
   }
 });
 
+// Removed quests history and item endpoints as generated content is not stored
+
 // POST /api/user/quests/submit  { topicId, level, correctCount, total }
 router.post('/quests/submit', auth, async (req, res) => {
   try {
-  const { topicId, level, correctCount, total, code, language, isCodingProgram } = req.body || {};
+  const { topicId, level, correctCount, total, code, language, isCodingProgram, answers } = req.body || {};
     if (!topicId || !level || total == null || correctCount == null) {
       return res.status(400).json({ message: 'topicId, level, correctCount, total required' });
     }
@@ -416,16 +491,31 @@ router.post('/quests/submit', auth, async (req, res) => {
     }
 
     // Record submission entry (audit trail)
+    let submissionDoc = null;
     try {
-      await UserCodingSubmission.create({
-        userId: req.user._id,
-        topicId: topic._id,
-        level: Number(level),
-        language: language || 'python',
-        code: code || '',
-        passed: !!programPassed,
-        meta: { correctCount, total }
-      });
+      if (codingSubmission) {
+        submissionDoc = await UserCodingSubmission.create({
+          userId: req.user._id,
+          topicId: topic._id,
+          level: Number(level),
+          language: language || 'python',
+          code: code || '',
+          passed: !!programPassed,
+          meta: { correctCount, total }
+        });
+      } else {
+        const answersArr = Array.isArray(answers)
+          ? answers
+          : Object.entries(answers || {}).map(([k, v]) => ({ index: Number(k), selected: String(v) }));
+        submissionDoc = await UserMCQSubmission.create({
+          userId: req.user._id,
+          topicId: topic._id,
+          level: Number(level),
+          answers: answersArr,
+          correctCount: Number(correctCount || 0),
+          total: Number(total || 0)
+        });
+      }
     } catch (e) { console.warn('Submission log failed', e?.message); }
 
     // Update totals: increment topic XP by earnedXP
@@ -449,7 +539,9 @@ router.post('/quests/submit', auth, async (req, res) => {
     progress.lastSubmissionAt = new Date();
     await progress.save();
 
-  // Update global XP only if the level just became passed
+    // No linking with generated quests (not stored)
+
+    // Update global XP only if the level just became passed
   if (levelPassed && earnedXP > 0) {
       let gx = await UserGlobalXP.findOne({ userId: req.user._id });
       if (!gx) gx = await UserGlobalXP.create({ userId: req.user._id, totalXP: 0 });

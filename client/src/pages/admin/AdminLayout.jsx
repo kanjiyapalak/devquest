@@ -1,6 +1,9 @@
 import React from 'react';
-import { Outlet, Link, useNavigate } from 'react-router-dom';
+import { Outlet, NavLink, useNavigate } from 'react-router-dom';
 import { FaHome, FaBook, FaUser, FaUsers, FaSignOutAlt } from 'react-icons/fa';
+// Share the same dashboard look-and-feel as the user dashboard
+import '../Dashboard.css';
+import '../LandingPage.css';
 import './Admin.css';
 
 const AdminLayout = () => {
@@ -14,43 +17,39 @@ const AdminLayout = () => {
   };
 
   return (
-    <div className="admin-container">
-      <aside className="admin-sidebar" style={{display: 'flex', flexDirection: 'column', height: '100vh'}}>
-        <div className="admin-logo" style={{cursor: 'pointer'}} onClick={() => navigate('/admin/profile')}>
-          <h2>DevQuest Admin</h2>
+    <div className="db-layout">
+      <aside className="db-sidebar">
+        <div className="db-brand" onClick={() => navigate('/admin/profile')}>
+          <div className="logo-icon">⚡</div>
+          <span className="logo-text">DevQuest Admin</span>
         </div>
-        <nav className="admin-nav" style={{flex: 1}}>
-          <Link to="/admin/dashboard" className="nav-link">
+        <nav className="db-nav">
+          <NavLink to="/admin/dashboard" className={({ isActive }) => `db-nav-item${isActive ? ' active' : ''}`}>
             <FaHome className="nav-icon" />
             Dashboard
-          </Link>
-          <Link to="/admin/quests" className="nav-link">
+          </NavLink>
+          <NavLink to="/admin/quests" className={({ isActive }) => `db-nav-item${isActive ? ' active' : ''}`}>
             <FaBook className="nav-icon" />
             Manage Quests
-          </Link>
-          <Link to="/admin/users" className="nav-link">
+          </NavLink>
+          <NavLink to="/admin/users" className={({ isActive }) => `db-nav-item${isActive ? ' active' : ''}`}>
             <FaUsers className="nav-icon" />
             Manage Users
-          </Link>
-          <Link to="/admin/profile" className="nav-link">
+          </NavLink>
+          <NavLink to="/admin/profile" className={({ isActive }) => `db-nav-item${isActive ? ' active' : ''}`}>
             <FaUser className="nav-icon" />
             Profile
-          </Link>
+          </NavLink>
+          <button type="button" onClick={handleLogout} className="db-nav-item" style={{width: '100%', textAlign:'left'}}>
+            <FaSignOutAlt className="nav-icon" /> Logout
+          </button>
         </nav>
-        <button 
-          onClick={handleLogout} 
-          className="action-btn" 
-          style={{background: '#ef4444', color: '#fff', borderRadius: '8px', fontWeight: 500, fontSize: '1rem', padding: '0.8rem 1.2rem', margin: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem'}}
-          title="Logout"
-        >
-          <FaSignOutAlt /> Logout
-        </button>
       </aside>
-      
-      <main className="admin-main">
+
+      <main className="db-main">
         <header className="admin-header">
           <div className="header-left">
-            <h1>Admin Dashboard</h1>
+            <h1 className="admin-title">Admin Dashboard</h1>
           </div>
           <div className="header-right" style={{display: 'flex', alignItems: 'center', gap: '1.5rem'}}>
             <span className="admin-name">{user.name || 'Admin'}</span>

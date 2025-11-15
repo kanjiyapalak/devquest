@@ -5,6 +5,10 @@ import CodeEditor from './CodeEditor';
 
 const Home = () => {
   const [quest, setQuest] = useState(null);
+  // Minimal UI: only statement/editor with run & submit.
+  // Keep latest code/language from the editor for AI modes
+  const [editorCode, setEditorCode] = useState('');
+  const [editorLang, setEditorLang] = useState('python');
   const [xpMeta, setXpMeta] = useState({ levelXP: null, xpPerProgram: 5, levelXPEarned: 0 });
   const location = useLocation();
   const params = useParams();
@@ -88,11 +92,13 @@ const Home = () => {
 
         {quest && (
           <div key={JSON.stringify(quest)} style={{ background: '#fff', borderRadius: '14px', boxShadow: '0 2px 12px #0002', padding: '28px 24px', marginTop: '30px', maxWidth: 700 }}>
+            {/* Minimal header removed (no tabs/AI). */}
             
-            {/* 📄 Problem Statement */}
-            <div style={{ fontSize: 28, fontWeight: 600, marginBottom: 20, color: '#2b2d42' }}>
-              <span role="img" aria-label="doc">📄</span> Problem Statement
-            </div>
+            {/* 📄 Problem Statement (shown when Statement tab is active) */}
+            <div>
+              <div style={{ fontSize: 28, fontWeight: 600, marginBottom: 20, color: '#2b2d42' }}>
+                <span role="img" aria-label="doc">📄</span> Problem Statement
+              </div>
             {xpMeta && xpMeta.levelXP != null && (
               <div style={{ display: 'flex', gap: 8, marginBottom: 10, flexWrap: 'wrap' }}>
                 <span style={{ padding: '6px 10px', borderRadius: 999, background: '#ECFDF3', color: '#16A34A', border: '1px solid #A6F4C5', fontWeight: 700 }}>+{xpMeta.xpPerProgram} XP per program</span>
@@ -168,6 +174,9 @@ const Home = () => {
             ) : (
               <li style={{ color: '#888', fontStyle: 'italic' }}>No test cases available.</li>
             )}
+            </div>
+
+            {/* No other tabs. */}
           </div>
         )}
       </div>
@@ -184,6 +193,8 @@ const Home = () => {
             // Persist the newly loaded quest so refresh keeps it
             saveQuest(q.topicId || params.id, q, { levelXP: q.levelXP, xpPerProgram: q.xpPerProgram, levelXPEarned: q.levelXPEarned });
           }}
+          onCodeChange={(c) => setEditorCode(c)}
+          onLanguageChange={(l) => setEditorLang(l)}
         />
       </div>
     </div>

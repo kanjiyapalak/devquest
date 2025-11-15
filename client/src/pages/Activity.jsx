@@ -61,6 +61,11 @@ function Heatmap({ items = [], days = 50 }) {
 
 export default function Activity() {
   const navigate = useNavigate();
+  const handleLogout = () => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    navigate('/login');
+  };
   const [summary, setSummary] = useState({ activeDays: 0, totalActivities: 0, dailyAverage: 0, currentStreak: 0, bestStreak: 0, lastSubmissionAt: null });
   const [heatmap, setHeatmap] = useState([]);
   const [error, setError] = useState('');
@@ -116,6 +121,7 @@ export default function Activity() {
           <button className="db-nav-item active" onClick={() => navigate('/activity')}>📈 Activity</button>
           <button className="db-nav-item" onClick={() => navigate('/profile')}>👤 Profile</button>
           <button className="db-nav-item" onClick={() => navigate('/help')}>❓ Help & FAQ</button>
+          <button className="db-nav-item" onClick={handleLogout}>🚪 Logout</button>
         </nav>
         <div className="db-quick">
           <div className="db-quick-title">Highlights</div>

@@ -3,13 +3,14 @@ import express from 'express';
 import dotenv from 'dotenv';
 import os from 'os';
 import { InferenceClient } from '@huggingface/inference';
+import OpenAI from 'openai';
 import { exec } from 'child_process';
 import fs from 'fs';
 import path from 'path';
 
 dotenv.config();
 const router = express.Router();
-const MODEL = 'mistralai/Mistral-Nemo-Instruct-2407';
+const MODEL = 'openai/gpt-oss-120b:together';
 const HF_TOKEN = process.env.HF_TOKEN;
 
 router.post('/generate', async (req, res) => {
@@ -17,45 +18,66 @@ router.post('/generate', async (req, res) => {
   if (!prompt?.trim()) prompt = 'Create a basic coding question with signature and 2 test cases.';
 
   const q = `
-Generate a LeetCode-style coding question on "${prompt}". Use this format:
+You are an expert competitive programming problem setter.
+TASK: Generate ONE high-quality, LeetCode / Codeforces style coding problem about "${prompt}" and a SMALL, ACCURATE test set.
 
+STRICT OUTPUT FORMAT (no extra sections, no markdown, no numbering):
 Problem:
-<problem description only, no test cases, no function signature>
+<concise problem statement only>
 
 Function Signatures:
-Python: <python signature>
-C++: <c++ signature>
-Java: <java signature>
+Python: <python function signature using snake_case>
+C++: <C++ function signature ONLY (inside a function, NOT full program)>
+Java: <public method signature ONLY (NOT a whole class)>
 
 Test Cases:
-Input: <input1 in JSON format>
-Expected: <expected1 in JSON format>
-Explanation: <explanation1>
+Input: <input JSON 1>
+Expected: <expected JSON 1>
+Explanation: <why expected is correct>
 
-Input: <input2 in JSON format>
-Expected: <expected2 in JSON format>
-Explanation: <explanation2>
+Input: <input JSON 2>
+Expected: <expected JSON 2>
+Explanation: <why expected is correct>
 
-Input/Output JSON rules:
-- ALWAYS ensure inputs that contain arrays or matrices include their sizes explicitly.
-  - 1D array: include {"n": <length>, "nums": [...]}
-  - 2D matrix: include {"rows": <R>, "cols": <C>, "matrix": [[...], ...]}
-  - Strings: include length if typical CP-style input uses it: {"n": <length>, "s": "..."}
-- When using an input JSON object, ORDER KEYS in the exact reading order for stdin: sizes first (n/rows/cols), then the data structures.
-- Keep all Input and Expected strictly valid JSON (no trailing commas, no comments, no backticks, no markdown).
+Input: <input JSON 3>
+Expected: <expected JSON 3>
+Explanation: <why expected is correct>
 
-(Do NOT use backticks anywhere. All inputs and outputs must be valid JSON. No Markdown formatting!)
+REQUIREMENTS & VALIDATION RULES (follow EXACTLY):
+1. Produce EXACTLY 3 test cases: (a) edge/minimal, (b) typical, (c) challenging/complex.
+2. Every Expected MUST be the TRUE result of applying the problem logic to the Input.
+3. Double‑check each Expected BEFORE output: recompute mentally; if mismatch, FIX it.
+4. JSON rules:
+  - Valid strict JSON: double quotes, no comments, no trailing commas, no NaN/Infinity.
+  - Arrays / matrices MUST include explicit sizes first when natural in CP style:
+     1D: {"n": <len>, "nums": [...]}
+     2D: {"rows": <R>, "cols": <C>, "matrix": [[...],[...]]}
+     String (if length relevant): {"n": <len>, "s": "..."}
+  - Order keys: all size fields first (n / rows / cols), then data containers, then scalars/parameters.
+5. NO full solution, NO hints about algorithmic approach—just the problem statement and required sections.
+6. Problem statement MUST define:
+  - Input description (implicitly via JSON fields naming)
+  - Required output (singular or structured) unambiguously.
+  - Constraints: provide realistic numeric constraints (NOT huge; ensure test cases respect them).
+7. If the task is about counting / optimizing, Expected must be an object like {"ans": value} unless naturally multidimensional.
+8. If multiple outputs are needed, wrap them in a JSON object with clear key names (never raw arrays as top-level unless the ONLY output is an array).
+9. NEVER fabricate impossible conditions; ensure test cases are consistent with constraints.
+10. NO markdown, no backticks, no extraneous commentary.
+
+SELF-CHECK BEFORE FINALIZING (do NOT output this checklist):
+- Did I recompute each Expected from the Input logically?
+- Do sizes match array/matrix/string lengths?
+- Are edge case and complex case meaningful (NOT trivial permutations)?
+- Are constraints consistent with test data?
+
+Return ONLY the required sections. Absolutely no extra text.
 `;
 
   try {
-    const client = new InferenceClient(HF_TOKEN);
-    const chat = await client.chatCompletion({
-      model: MODEL,
-      provider: 'nebius',
-      messages: [{ role: 'user', content: q }],
-    });
+  const oa = new OpenAI({ baseURL: 'https://router.huggingface.co/v1', apiKey: HF_TOKEN });
+  const chat = await oa.chat.completions.create({ model: MODEL, messages: [{ role: 'user', content: q }], temperature: 0.3 });
 
-    let output = chat.choices[0].message.content;
+  let output = chat.choices[0].message.content;
     console.log('🧠 AI Output:', output);
 
     output = output.replace(/\*\*/g, '').replace(/`/g, '').trim();
@@ -99,7 +121,76 @@ Input/Output JSON rules:
       });
     }
 
-    res.json({ problem, functionSignatures, testCases, raw: output });
+    // Sanitize test cases: fix size fields and key order
+    function sanitizeInputJsonString(s) {
+      try {
+        const obj = JSON.parse(s);
+        const fixSizes = (o) => {
+          const keys = Object.keys(o);
+          const out = {};
+          // Detect and fix sizes
+          const hasNums = Array.isArray(o.nums);
+          const hasArr = Array.isArray(o.arr);
+          const hasArray = Array.isArray(o.array);
+          const hasMatrix = Array.isArray(o.matrix) && Array.isArray(o.matrix[0] || []);
+          const hasStr = typeof o.s === 'string';
+          if (hasNums) o.n = o.n != null ? Number(o.n) : o.nums.length, o.n = o.nums.length;
+          if (hasArr) o.n = o.n != null ? Number(o.n) : o.arr.length, o.n = o.arr.length;
+          if (hasArray) o.n = o.n != null ? Number(o.n) : o.array.length, o.n = o.array.length;
+          if (hasStr) o.n = o.n != null ? Number(o.n) : o.s.length, o.n = o.s.length;
+          if (hasMatrix) {
+            o.rows = o.rows != null ? Number(o.rows) : (o.matrix.length);
+            const firstRow = Array.isArray(o.matrix[0]) ? o.matrix[0] : [];
+            o.cols = o.cols != null ? Number(o.cols) : (firstRow.length);
+            o.rows = o.matrix.length;
+            o.cols = firstRow.length;
+          }
+          // Order: sizes first then others in original order
+          const sizeOrder = ['n', 'rows', 'cols'];
+          for (const k of sizeOrder) if (k in o) out[k] = o[k];
+          for (const k of keys) if (!(k in out)) out[k] = o[k];
+          return out;
+        };
+        const fixed = fixSizes(obj);
+        return JSON.stringify(fixed);
+      } catch {
+        return s; // leave as-is if not JSON
+      }
+    }
+
+    // Optional pattern-based expected correction (e.g., Longest Consecutive Sequence)
+    function detectAndFixExpected(problemText, tcArr) {
+      const txt = String(problemText || '').toLowerCase();
+      const isLongestConsecutive = /longest\s+consecutive/.test(txt);
+      const fix = (tc) => {
+        const inputStr = sanitizeInputJsonString(tc.input);
+        let expectedStr = tc.expected;
+        if (isLongestConsecutive) {
+          try {
+            const obj = JSON.parse(inputStr);
+            const nums = Array.isArray(obj.nums) ? obj.nums : (Array.isArray(obj.arr) ? obj.arr : (Array.isArray(obj.array) ? obj.array : []));
+            // compute length of longest consecutive sequence
+            const set = new Set(nums);
+            let best = 0;
+            for (const x of set) {
+              if (!set.has(x - 1)) {
+                let cur = x, len = 1;
+                while (set.has(cur + 1)) { cur++; len++; }
+                if (len > best) best = len;
+              }
+            }
+            const fixed = { ans: best };
+            expectedStr = JSON.stringify(fixed);
+          } catch {}
+        }
+        return { input: inputStr, expected: expectedStr, explanation: tc.explanation };
+      };
+      return tcArr.map(fix);
+    }
+
+    const sanitized = detectAndFixExpected(problem, testCases);
+
+    res.json({ problem, functionSignatures, testCases: sanitized, raw: output });
   } catch (e) {
     console.error(e);
     res.status(500).json({ error: e.message });
@@ -110,22 +201,7 @@ Input/Output JSON rules:
 
 
 
-router.post('/explain', async (req, res) => {
-  const { code, problem } = req.body;
-  if (!code || !problem) return res.status(400).json({ error: 'Missing code or problem.' });
-  const q = `Explain the following solution for this coding problem in a clear, step-by-step way.\n\nProblem:\n${problem}\n\nSolution Code:\n${code}`;
-  try {
-    const client = new InferenceClient(HF_TOKEN);
-    const chat = await client.chatCompletion({
-      model: MODEL, provider: 'nebius',
-      messages: [{ role: 'user', content: q }],
-    });
-    const explanation = chat.choices[0].message.content;
-    res.json({ explanation });
-  } catch (e) {
-    res.status(500).json({ error: e.message });
-  }
-});
+// Removed /explain endpoint as per request
 
 // ...existing code...
 router.post('/evaluate', async (req, res) => {

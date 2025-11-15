@@ -7,6 +7,11 @@ import './Dashboard.css';
 
 export default function UserDashboard() {
   const navigate = useNavigate();
+  const handleLogout = () => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    navigate('/login');
+  };
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [search, setSearch] = useState('');
@@ -139,6 +144,7 @@ export default function UserDashboard() {
           <button className="db-nav-item" onClick={() => navigate('/profile')}>👤 Profile</button>
           <button className="db-nav-item" onClick={() => navigate('/activity')}>📈 Activity</button>
           <button className="db-nav-item" onClick={() => navigate('/help')}>❓ Help & FAQ</button>
+          <button className="db-nav-item" onClick={handleLogout}>🚪 Logout</button>
         </nav>
         <div className="db-quick">
           <div className="db-quick-title">Quick Stats</div>

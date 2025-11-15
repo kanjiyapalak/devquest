@@ -35,11 +35,7 @@ const faqs = [
   {
     q: 'I get logged out unexpectedly. What should I do?',
     a: 'If your token expires or is invalid, the app redirects to Login automatically. Log back in and retry.'
-  },
-  {
-    q: 'How do I report an issue or request a feature?',
-    a: 'Use the Help page form below or contact the maintainers. Provide steps to reproduce and screenshots if possible.'
-  },
+  }
 ];
 
 export default function Help() {
@@ -47,6 +43,12 @@ export default function Help() {
   const user = useMemo(() => {
     try { return JSON.parse(localStorage.getItem('user') || '{}'); } catch { return {}; }
   }, []);
+
+  const handleLogout = () => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    navigate('/login');
+  };
 
   return (
     <div className="db-layout">
@@ -61,18 +63,15 @@ export default function Help() {
           <button className="db-nav-item" onClick={() => navigate('/my-quests')}>📑 My Quests</button>
           <button className="db-nav-item" onClick={() => navigate('/activity')}>📈 Activity</button>
           <button className="db-nav-item active" onClick={() => navigate('/help')}>❓ Help & FAQ</button>
+          <button className="db-nav-item" onClick={handleLogout}>🚪 Logout</button>
         </nav>
-        <div className="db-quick">
-          <div className="db-quick-title">Need Support?</div>
-          <div className="db-quick-row"><span>User</span><b>{user?.name || 'You'}</b></div>
-          <div className="db-quick-row"><span>Role</span><b>{user?.role || 'user'}</b></div>
-        </div>
+        {/* Support quick card removed as requested */}
       </aside>
 
       <main className="db-main">
         <section className="hero-section">
           <div className="hero-container">
-            <div className="hero-badge"><span className="badge-icon">❓</span><span>Help & Support</span></div>
+            <div className="hero-badge"><span className="badge-icon">❓</span><span>Help & FAQ</span></div>
             <h1 className="hero-title">Frequently Asked Questions</h1>
             <p className="hero-description">Learn how quests, XP, badges, and activity tracking work.</p>
           </div>
@@ -89,21 +88,7 @@ export default function Help() {
           </div>
         </section>
 
-        <section className="features-section">
-          <div className="features-container" style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 12, padding: 16 }}>
-            <h2 className="section-title" style={{ marginTop: 0 }}>Contact Support</h2>
-            <p className="section-subtitle">Share details about your issue or request.</p>
-            <form onSubmit={(e) => { e.preventDefault(); alert('Thanks! We\'ll get back to you.'); }}>
-              <div style={{ display: 'grid', gap: 12 }}>
-                <input placeholder="Subject" style={{ padding: '10px 12px', border: '1px solid #e5e7eb', borderRadius: 8 }} />
-                <textarea placeholder="Describe your issue or request" rows={5} style={{ padding: '10px 12px', border: '1px solid #e5e7eb', borderRadius: 8 }} />
-                <div>
-                  <button type="submit" style={{ background: '#7F56D9', color: '#fff', border: 'none', padding: '10px 14px', borderRadius: 8, cursor: 'pointer' }}>Send</button>
-                </div>
-              </div>
-            </form>
-          </div>
-        </section>
+        {/* Contact/Support form removed per request */}
       </main>
     </div>
   );

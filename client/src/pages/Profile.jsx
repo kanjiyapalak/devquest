@@ -17,6 +17,12 @@ export default function Profile() {
     try { return JSON.parse(localStorage.getItem('user') || '{}'); } catch { return {}; }
   }, []);
 
+  const handleLogout = () => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    navigate('/login');
+  };
+
   // Format a nicer display name (Title Case). Fallback to email local-part.
   const displayName = useMemo(() => {
     const raw = (user?.name && String(user.name).trim()) || (user?.email ? String(user.email).split('@')[0] : '') || 'User';
@@ -138,6 +144,7 @@ export default function Profile() {
           <button className="db-nav-item active" onClick={() => navigate('/profile')}>👤 Profile</button>
           <button className="db-nav-item" onClick={() => navigate('/activity')}>📈 Activity</button>
           <button className="db-nav-item" onClick={() => navigate('/help')}>❓ Help & FAQ</button>
+          <button className="db-nav-item" onClick={handleLogout}>🚪 Logout</button>
         </nav>
         <div className="db-quick">
           <div className="db-quick-title">Quick Stats</div>

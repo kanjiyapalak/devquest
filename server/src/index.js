@@ -3,11 +3,13 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import connectDB from './config/database.js';
 import authRoutes from './routes/auth.js';
-import aiRoutes from './routes/ai.js';
+// removed: ai routes
 import adminRoutes from './routes/admin.js';
 import topicsRoutes from './routes/topics.js';
+import questRoutes from './routes/quest.js';
 import dashboardRoutes from './routes/dashboard.js';
 import userRoutes from './routes/user.js';
+// removed: ai chat modes
 
 
 
@@ -25,17 +27,14 @@ app.use(express.json());
 app.use('/api/auth', authRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/topics', topicsRoutes);
+app.use('/api/quest', questRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/user', userRoutes);
+// removed: /api/ai mounts
 
 
 
-// 👇 AI routes for coding quest generation/evaluation
-// Backwards-compat legacy mounts
-app.use('/generate', aiRoutes);
-app.use('/evaluate', aiRoutes);
-// Preferred API namespace used by the frontend axios instance
-app.use('/api/quest', aiRoutes);
+// removed: legacy AI routes and chat modes
 
 // Mount quests routes
 // app.use('/api/quests', userRoutes); // Using userRoutes for quests endpoints

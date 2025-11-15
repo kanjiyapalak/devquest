@@ -45,11 +45,17 @@ function ProgressGraph({ items = [] }) {
 
 export default function MyQuests() {
   const navigate = useNavigate();
+  const handleLogout = () => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    navigate('/login');
+  };
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [search, setSearch] = useState('');
   const [running, setRunning] = useState([]);
   const [completed, setCompleted] = useState([]);
+  // Saved quests removed (no longer stored/displayed)
   const [userXP, setUserXP] = useState(0);
 
   const user = useMemo(() => {
@@ -73,6 +79,7 @@ export default function MyQuests() {
         const { data } = await api.get('/user/topics/sections');
         setRunning(data.running || []);
         setCompleted(data.completed || []);
+        // Saved quests history removed
       } catch (err) {
         if (err?.response?.status === 401) {
           localStorage.removeItem('token');
@@ -140,7 +147,7 @@ export default function MyQuests() {
 
   const stats = useMemo(() => ({
     completed: completed.length,
-    running: running.length,
+    running: running.length
   }), [completed, running]);
 
   return (
@@ -157,6 +164,7 @@ export default function MyQuests() {
           <button className="db-nav-item" onClick={() => navigate('/profile')}>👤 Profile</button>
           <button className="db-nav-item" onClick={() => navigate('/activity')}>📈 Activity</button>
           <button className="db-nav-item" onClick={() => navigate('/help')}>❓ Help & FAQ</button>
+          <button className="db-nav-item" onClick={handleLogout}>🚪 Logout</button>
         </nav>
         <div className="db-quick">
           <div className="db-quick-title">Quick Stats</div>
@@ -231,6 +239,8 @@ export default function MyQuests() {
             </div>
           </div>
         </section>
+
+        {/* Saved quests section removed */}
       </main>
     </div>
   );

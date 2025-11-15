@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { api } from '../../api';
 import { FaPlus, FaEdit, FaTrash, FaTimes, FaSearch } from 'react-icons/fa';
 import './Admin.css';
+// Reuse user quest card container styles
+import '../../components/QuestCard.css';
 
 const Quests = () => {
   const navigate = useNavigate();
@@ -387,44 +389,52 @@ const Quests = () => {
           </div>
         ) : (
           quests.map(quest => (
-            <div key={quest._id} className="quest-card">
-              <div className="quest-card-header">
-                <h3>{quest.title}</h3>
-              </div>
-              <div className="quest-details">
-                {quest.description || 'No description provided.'}
-              </div>
-              <div className="quest-card-body" style={{padding: 0}}>
-                <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr', rowGap: '0.5rem', columnGap: '1.5rem'}}>
-                  <div style={{color: '#6b7280'}}>Category</div>
-                  <div style={{fontWeight: 'bold', textAlign: 'right'}}>{quest.category}</div>
-                  <div style={{color: '#6b7280'}}>Type</div>
-                  <div style={{fontWeight: 'bold', textAlign: 'right'}}>{quest.questionType === 'mcq' ? 'MCQ' : 'Coding'}</div>
-                  <div style={{color: '#6b7280'}}>Total XP</div>
-                  <div style={{fontWeight: 'bold', textAlign: 'right'}}>{quest.totalXP}</div>
-                  <div style={{color: '#6b7280'}}>Levels</div>
-                  <div style={{fontWeight: 'bold', textAlign: 'right'}}>{quest.levels?.length || 0}</div>
+            <article key={quest._id} className="qc-card">
+              <div className="qc-header">
+                <h3 className="qc-title">{quest.title}</h3>
+                <p className="qc-desc">{quest.description || 'No description provided.'}</p>
+                <div className="qc-badges">
+                  <span className="qc-badge category">{(quest.category || 'general').toUpperCase()}</span>
+                  <span className="qc-badge tag">{quest.questionType === 'mcq' ? 'MCQ' : 'Coding'}</span>
                 </div>
               </div>
-              <div className="quest-card-footer" style={{justifyContent: 'flex-start'}}>
+
+              <div className="qc-metrics">
+                <div className="qc-metric">
+                  <div className="qc-metric-icon">⭐</div>
+                  <div className="qc-metric-text">
+                    <div className="qc-metric-value">{quest.totalXP}</div>
+                    <div className="qc-metric-label">Total XP</div>
+                  </div>
+                </div>
+                <div className="qc-metric">
+                  <div className="qc-metric-icon">🧩</div>
+                  <div className="qc-metric-text">
+                    <div className="qc-metric-value">{quest.levels?.length || 0}</div>
+                    <div className="qc-metric-label">Levels</div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="aq-actions">
                 <button 
-                  className="action-btn edit-btn" 
-                  style={{flex: 1, marginRight: '0.5rem', background: '#2563eb', color: '#fff', borderRadius: '8px', fontWeight: 500, fontSize: '1rem', padding: '0.6rem 0'}} 
+                  type="button"
+                  className="aq-btn edit"
                   onClick={() => handleEditQuest(quest)}
                   title="Edit quest"
                 >
-                  <FaEdit style={{marginRight: '0.5rem'}} /> Edit
+                  <FaEdit/> Edit
                 </button>
                 <button 
-                  className="action-btn delete-btn" 
-                  style={{flex: 0.4, background: '#ef4444', color: '#fff', borderRadius: '8px', fontWeight: 500, fontSize: '1rem', padding: '0.6rem 0'}} 
+                  type="button"
+                  className="aq-btn delete"
                   onClick={() => handleDeleteQuest(quest._id)}
                   title="Delete quest"
                 >
                   <FaTrash />
                 </button>
               </div>
-            </div>
+            </article>
           ))
         )}
       </div>

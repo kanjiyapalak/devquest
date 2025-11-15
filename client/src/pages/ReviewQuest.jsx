@@ -24,6 +24,12 @@ export default function ReviewQuest() {
     try { return JSON.parse(localStorage.getItem('user') || '{}'); } catch { return {}; }
   }, []);
 
+  const handleLogout = () => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    navigate('/login');
+  };
+
   useEffect(() => {
     const load = async () => {
       try {
@@ -71,6 +77,7 @@ export default function ReviewQuest() {
           <button className="db-nav-item" onClick={() => navigate('/my-quests')}>📑 My Quests</button>
           <button className="db-nav-item" onClick={() => navigate('/activity')}>📈 Activity</button>
           <button className="db-nav-item" onClick={() => navigate('/help')}>❓ Help & FAQ</button>
+          <button className="db-nav-item" onClick={handleLogout}>🚪 Logout</button>
         </nav>
       </aside>
 

@@ -1,5 +1,4 @@
   import React, { useState, useEffect } from 'react';
-  import ReactMarkdown from 'react-markdown';
   import { api } from '../api';
   import Editor from '@monaco-editor/react';
   import { useNavigate } from 'react-router-dom';
@@ -38,7 +37,7 @@
     java: `public class Main {\n    public static void main(String[] args) {\n        // Write your code here\n    }\n}`
   };
 
-  const CodeEditor = ({ quest, onQuestChange }) => {
+  const CodeEditor = ({ quest, onQuestChange, onCodeChange, onLanguageChange }) => {
     const notifyQuestChange = (q) => {
       try { if (typeof onQuestChange === 'function') onQuestChange(q); } catch {}
     };
@@ -48,11 +47,11 @@
     const [results, setResults] = useState([]);
     const [loading, setLoading] = useState(false);
     const [activeTab, setActiveTab] = useState(0);
-    const [theme, setTheme] = useState('dark'); // 'dark' | 'light'
-    const isDark = theme === 'dark';
+  const [theme, setTheme] = useState('dark'); // 'dark' | 'light' (applies to Monaco only)
+  const isDark = theme === 'dark';
     const [submitLoading, setSubmitLoading] = useState(false);
-    const [submitMsg, setSubmitMsg] = useState('');
-    const [badge, setBadge] = useState(null);
+  const [submitMsg, setSubmitMsg] = useState('');
+  const [badge, setBadge] = useState(null);
 
     // --- Badge icon helpers (mirror logic from Profile/Quest) ---
     const badgeIconFor = (name = '') => {
@@ -102,10 +101,18 @@
       : parseSection(currentQuest?.raw, 'Problem') || '';
 
     useEffect(() => {
-      setCode(boilerplate[language]);
+      const tpl = boilerplate[language];
+      setCode(tpl);
+      try { if (typeof onCodeChange === 'function') onCodeChange(tpl); } catch {}
+      try { if (typeof onLanguageChange === 'function') onLanguageChange(language); } catch {}
     }, [language]);
 
     const handleRun = async () => {
+      // Warn early if no test cases parsed
+      if (!testCases || testCases.length === 0) {
+        setResults(['❌ Error: No test cases available to run.']);
+        return;
+      }
       setLoading(true);
       try {
         // Ensure testCases inputs/expected are strings (JSON) for backend normalization
@@ -114,7 +121,7 @@
           expected: typeof tc.expected === 'string' ? tc.expected : JSON.stringify(tc.expected),
           explanation: tc.explanation
         }));
-  const response = await api.post('/quest/evaluate', {
+        const response = await api.post('/quest/evaluate', {
           code,
           testCases: tcPayload,
           language
@@ -189,10 +196,11 @@
     };
 
     // Theming tokens
-    const pageBg = isDark ? '#0F172A' : '#F7F8FC';
-    const pageFg = isDark ? '#E5E7EB' : '#0f172a';
-    const cardBg = isDark ? '#111827' : '#FFFFFF';
-    const cardBorder = isDark ? 'rgba(255,255,255,0.06)' : '#e5e7eb';
+  // Keep the app UI light regardless of theme; only the Monaco editor turns dark when selected
+  const pageBg = '#F7F8FC';
+  const pageFg = '#0f172a';
+  const cardBg = '#FFFFFF';
+  const cardBorder = '#e5e7eb';
     const accent = '#4f8cff';
 
     return (
@@ -200,13 +208,13 @@
         {/* Problem Statement always visible above code editor */}
 
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 10 }}>
+  <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 10 }}>
           <button onClick={() => navigate(-1)} style={{ padding:'6px 10px', borderRadius:8, border:`1px solid ${cardBorder}`, background:cardBg, color:pageFg, cursor:'pointer' }}>← Back</button>
           <h2 style={{ margin: 0 }}>🧪 Code Editor</h2>
           <div style={{ marginLeft: 'auto', display: 'flex', gap: 8 }}>
             <select
               value={language}
-              onChange={(e) => setLanguage(e.target.value)}
+              onChange={(e) => { setLanguage(e.target.value); try{ if (typeof onLanguageChange==='function') onLanguageChange(e.target.value); }catch{} }}
               style={{ padding: '6px 10px', borderRadius: 8, border: `1px solid ${cardBorder}`, background: cardBg, color: pageFg }}
             >
               <option value="python">Python</option>
@@ -224,6 +232,8 @@
           </div>
         </div>
 
+  {/* Top tabs moved to left panel (Home) above the problem statement */}
+
     {currentQuest && (
           <div style={{ marginBottom: 12, display:'flex', gap: 16, alignItems:'center', flexWrap:'wrap' }}>
       <span style={{ padding:'6px 10px', borderRadius:999, border:`1px solid ${cardBorder}`, background:cardBg }}>Topic: <b>{currentQuest.title || '—'}</b></span>
@@ -236,7 +246,7 @@
           language={language === 'cpp' ? 'cpp' : language}
           value={code}
           theme={isDark ? 'vs-dark' : 'light'}
-          onChange={(value) => setCode(value || '')}
+          onChange={(value) => { const v = value || ''; setCode(v); try{ if (typeof onCodeChange==='function') onCodeChange(v); }catch{} }}
           options={{
             autoClosingBrackets: 'always',
             autoClosingQuotes: 'always',
@@ -257,32 +267,55 @@
           </button>
         </div>
 
+        {/* Immediate error or generic output (string-based) rendering */}
+        {!isDetailedResults && results.length === 1 && typeof results[0] === 'string' && (
+          <div style={{ marginTop: 20, padding: '12px 16px', borderRadius: 10, background: '#FEF3F2', color: '#B42318', border: '1px solid #FEE4E2', fontWeight: 500 }}>
+            {results[0]}
+          </div>
+        )}
+
         {/* Test Cases Tabs */}
         <div style={{ marginTop: 38 }}>
           <h3 style={{ color: pageFg, fontWeight:800, fontSize:18, marginBottom:14 }}>🧪 Test Cases</h3>
           {testCases.length > 0 ? (
             <div>
               <div style={{ display: 'flex', gap: 8, marginBottom: 18 }}>
-                {testCases.map((tc, idx) => (
-                  <button
-                    key={idx}
-                    onClick={() => setActiveTab(idx)}
-                    style={{
-                      padding: '8px 16px',
-                      borderRadius: 999,
-                      border: activeTab === idx ? `2px solid ${accent}` : `1px solid ${cardBorder}`,
-                      background: activeTab === idx ? (isDark ? '#0B1220' : '#F7FAFF') : cardBg,
-                      color: pageFg,
-                      fontWeight: 700,
-                      cursor: 'pointer',
-                      boxShadow: activeTab === idx ? `0 2px 8px ${accent}22` : 'none',
-                      outline: 'none',
-                      transition: 'all 0.15s',
-                    }}
-                  >
-                    Case {idx + 1}
-                  </button>
-                ))}
+                {testCases.map((tc, idx) => {
+                  const r = isDetailedResults ? results[idx] : null;
+                  const passed = r && r.passed;
+                  const failed = r && !r.passed;
+                  return (
+                    <button
+                      key={idx}
+                      onClick={() => setActiveTab(idx)}
+                      style={{
+                        padding: '8px 14px 8px 12px',
+                        borderRadius: 14,
+                        border: activeTab === idx ? `2px solid ${passed ? '#12B76A' : failed ? '#F04438' : accent}` : `1px solid ${cardBorder}`,
+                        background: activeTab === idx ? (passed ? '#ECFDF3' : failed ? '#FEF3F2' : '#F7FAFF') : cardBg,
+                        color: pageFg,
+                        fontWeight: 600,
+                        cursor: 'pointer',
+                        boxShadow: activeTab === idx ? `0 2px 8px ${passed ? '#12B76A33' : failed ? '#F0443833' : `${accent}22`}` : 'none',
+                        outline: 'none',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 6,
+                        fontSize: 14,
+                        transition: 'all 0.15s',
+                      }}
+                    >
+                      <span style={{
+                        width: 10,
+                        height: 10,
+                        borderRadius: '50%',
+                        background: passed ? '#12B76A' : failed ? '#F04438' : '#CBD5E1',
+                        boxShadow: passed ? '0 0 0 2px #A6F4C5' : failed ? '0 0 0 2px #FECDCA' : 'none'
+                      }} />
+                      Case {idx + 1}
+                    </button>
+                  );
+                })}
               </div>
               {/* Test case card */}
               <div style={{
@@ -296,16 +329,16 @@
               }}>
                 <div style={{ display:'grid', gap: 10 }}>
                   <div>
-                    <div style={{ fontSize: 12, color: isDark ? '#CBD5E1' : '#64748B', textTransform:'uppercase', letterSpacing: .4 }}>Input</div>
-                    <pre style={{ margin: 6, marginLeft: 0, background: isDark ? '#0B1220' : '#F8FAFC', color: pageFg, padding: '10px 12px', borderRadius: 8, fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace', whiteSpace: 'pre-wrap', border:`1px solid ${cardBorder}` }}>{testCases[activeTab]?.input}</pre>
+                    <div style={{ fontSize: 12, color: '#64748B', textTransform:'uppercase', letterSpacing: .4 }}>Input</div>
+                    <pre style={{ margin: 6, marginLeft: 0, background: '#F8FAFC', color: pageFg, padding: '10px 12px', borderRadius: 8, fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace', whiteSpace: 'pre-wrap', border:`1px solid ${cardBorder}` }}>{testCases[activeTab]?.input}</pre>
                   </div>
                   <div>
-                    <div style={{ fontSize: 12, color: isDark ? '#CBD5E1' : '#64748B', textTransform:'uppercase', letterSpacing: .4 }}>Expected</div>
-                    <pre style={{ margin: 6, marginLeft: 0, background: isDark ? '#0B1220' : '#F8FAFC', color: pageFg, padding: '10px 12px', borderRadius: 8, fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace', whiteSpace: 'pre-wrap', border:`1px solid ${cardBorder}` }}>{testCases[activeTab]?.expected}</pre>
+                    <div style={{ fontSize: 12, color: '#64748B', textTransform:'uppercase', letterSpacing: .4 }}>Expected</div>
+                    <pre style={{ margin: 6, marginLeft: 0, background: '#F8FAFC', color: pageFg, padding: '10px 12px', borderRadius: 8, fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace', whiteSpace: 'pre-wrap', border:`1px solid ${cardBorder}` }}>{testCases[activeTab]?.expected}</pre>
                   </div>
           {testCases[activeTab] && typeof testCases[activeTab].explanation === 'string' && testCases[activeTab].explanation.trim() && (
                     <div style={{ color: pageFg }}>
-                      <div style={{ fontSize: 12, color: isDark ? '#CBD5E1' : '#64748B', textTransform:'uppercase', letterSpacing: .4, marginBottom: 6 }}>Explanation</div>
+                      <div style={{ fontSize: 12, color: '#64748B', textTransform:'uppercase', letterSpacing: .4, marginBottom: 6 }}>Explanation</div>
             <div style={{ whiteSpace: 'pre-line' }}>{testCases[activeTab]?.explanation}</div>
                     </div>
                   )}
@@ -313,13 +346,13 @@
                   {/* Show results if available */}
                   {isDetailedResults && results[activeTab] && (
                     <div style={{ marginTop: 4, display:'flex', gap: 16, alignItems:'center', flexWrap:'wrap' }}>
-                      <div style={{ fontSize: 12, color: isDark ? '#CBD5E1' : '#64748B', textTransform:'uppercase', letterSpacing: .4 }}>Output</div>
-                      <code style={{ background: isDark ? '#0B1220' : '#F8FAFC', padding: '6px 8px', borderRadius: 6, border:`1px solid ${cardBorder}` }}>{results[activeTab].output}</code>
+                      <div style={{ fontSize: 12, color: '#64748B', textTransform:'uppercase', letterSpacing: .4 }}>Output</div>
+                      <code style={{ background: '#F8FAFC', padding: '6px 8px', borderRadius: 6, border:`1px solid ${cardBorder}` }}>{results[activeTab].output}</code>
                       <span style={{
                         padding:'6px 10px', borderRadius: 999,
-                        background: results[activeTab].passed ? (isDark ? '#052E1C' : '#ECFDF3') : (isDark ? '#3B0A06' : '#FEF3F2'),
+                        background: results[activeTab].passed ? '#ECFDF3' : '#FEF3F2',
                         color: results[activeTab].passed ? '#12B76A' : '#F04438',
-                        border: `1px solid ${results[activeTab].passed ? (isDark ? '#064E3B' : '#A6F4C5') : (isDark ? '#7A271A' : '#FECDCA')}`
+                        border: `1px solid ${results[activeTab].passed ? '#A6F4C5' : '#FECDCA'}`
                       }}>
                         {results[activeTab].passed ? 'Passed' : 'Failed'}
                       </span>
@@ -340,10 +373,7 @@
           <div style={{ marginTop:12, color: '#A78BFA' }}>{submitMsg}</div>
         )}
 
-        {/* AI Explanation Section */}
-        {currentQuest && (
-          <ExplainSection quest={currentQuest} code={code} />
-        )}
+  {/* Explain My Code feature removed as requested */}
 
         {badge && (
           <div style={{ marginTop:16, padding:12, border:`1px solid ${cardBorder}`, borderRadius:10, background:cardBg, display:'flex', gap:12, alignItems:'center' }}>
@@ -357,67 +387,6 @@
               <div style={{ fontWeight:700, marginBottom:6 }}>🏆 Badge Unlocked: {badge.name}</div>
               <div style={{ opacity:.9 }}>{badge.description}</div>
             </div>
-          </div>
-        )}
-      </div>
-    );
-  };
-
-  // --- ExplainSection component ---
-  const ExplainSection = ({ quest, code }) => {
-    const [explanation, setExplanation] = useState('');
-    const [loading, setLoading] = useState(false);
-    const [error, setError] = useState('');
-
-    // Always get a valid problem statement (robust fallback)
-    let problemText = (quest?.problem && quest.problem.trim())
-      ? quest.problem
-      : parseSection(quest?.raw, 'Problem');
-    if (!problemText || !problemText.trim()) {
-      problemText = quest?.raw || '';
-    }
-    if (!problemText || !problemText.trim()) {
-      problemText = 'No problem statement found.';
-    }
-
-    const handleExplain = async () => {
-      setLoading(true);
-      setError('');
-      setExplanation('');
-      try {
-  const res = await api.post('/quest/explain', {
-          code,
-          problem: problemText
-        });
-        if (res.data && res.data.explanation) {
-          setExplanation(res.data.explanation);
-        } else {
-          setError('No explanation could be generated. Please try again.');
-        }
-      } catch (e) {
-        setError(
-          e?.response?.data?.error ||
-          e.message ||
-          'Failed to generate explanation. Please check your connection and try again.'
-        );
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    return (
-      <div style={{ marginTop: 32 }}>
-        <button
-          style={{ padding: '8px 18px', fontSize: 15, background: '#2b2d42', color: '#fff', border: 'none', borderRadius: 8, cursor: 'pointer', marginBottom: 12, fontWeight:700 }}
-          onClick={handleExplain}
-        >
-          {loading ? 'Explaining...' : 'Explain My Code'}
-        </button>
-
-        {error && <div style={{ color: '#ff3c3c', marginBottom: 8 }}>{error}</div>}
-        {explanation && (
-          <div style={{ background:'#24253a', borderRadius:8, padding:'16px 14px', color:'#d2eaff', fontSize:16, marginTop: 8, boxShadow:'0 1px 8px #0002' }}>
-            <ReactMarkdown>{explanation}</ReactMarkdown>
           </div>
         )}
       </div>

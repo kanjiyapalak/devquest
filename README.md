@@ -1,45 +1,96 @@
 # DevQuest
 
-DevQuest (aka "Devquest") is a full‑stack learning platform that blends MCQs and DSA coding quests with XP, levels, and badges.
+A full‑stack learning platform with MCQ and coding quests, XP/levels, badges, and an admin panel.
 
-## Features
-- MCQ quests with level‑based XP
-- DSA coding editor with test cases, dark/light theme, and code explanations
-- XP and level progression per topic and globally
-- Badges on topic completion, Profile with KPIs
-- Activity tracking with streaks and heatmap
-- Admin can manage topics and levels
+---
 
-## Tech Stack
-- Client: React (Vite/CRA), React Router, Axios, Monaco editor
-- Server: Node.js, Express, MongoDB/Mongoose
-- AI: Hugging Face Inference Router for generation/evaluation
+## Install
 
-## Getting Started
-1. Prerequisites
-   - Node.js 18+
-   - MongoDB running locally or a connection string
-2. Setup
-   - Copy `.env.example` to `.env` and set values
-   - Install deps in both folders
-3. Run
-   - In `server`: `npm install` then `npm start`
-   - In `client`: `npm install` then `npm start`
+Prerequisites
+- Node.js 18+
+- MongoDB running locally (or a MongoDB URI)
 
-Client dev server runs on 5173/3000, server on 5000 by default.
+Folder names
+- The project may be organized as `backend/` and `frontend/`.
+- If your copy still has `server/` and `client/`, just substitute those names in all commands below.
 
-## Environment
-Example `.env` (server):
+Steps
+1) Backend install
 ```
+cd backend   # or: cd server
+npm install
+```
+
+2) Frontend install
+```
+cd frontend  # or: cd client
+npm install
+```
+
+---
+
+## Environment Files
+
+Create a `.env` file in both backend and frontend using `.env.example` as a reference (create the example if it doesn’t exist).
+
+Backend `.env` (example)
+```
+PORT=5000
 MONGO_URI=mongodb://localhost:27017/devquest
 JWT_SECRET=change_me
+# Optional: only if you use AI features
 HF_TOKEN=your_hf_or_router_token
-PORT=5000
 ```
 
-## Scripts
-- server: `npm start` (or `nodemon`), `npm run init:db` to seed
-- client: `npm start`, `npm run build`
+Frontend `.env` (example)
+```
+VITE_API_URL=http://localhost:5000/api
+```
+
+---
+
+## Database Setup
+
+Option A — Restore from dump (recommended if `db-backup/` is present)
+```
+# from repo root
+mongorestore --db devquest ./db-backup/devquest
+```
+
+Option B — Seed scripts
+```
+cd backend   # or: cd server
+# Node entry moved to src/, scripts are under src/scripts
+node src/scripts/initDatabase.js
+node src/scripts/seedBadgesForTopics.js
+node src/scripts/seedUserTestData.js
+```
+
+---
+
+## Run
+
+Backend
+```
+cd backend   # or: cd server
+npm run dev
+```
+
+Frontend
+```
+cd frontend  # or: cd client
+npm run dev
+```
+
+The frontend runs on port 5173/3000 and the backend on port 5000 by default. Update `.env` values if you change ports.
+
+---
+
+## Tech Stack
+- Frontend: React + React Router + Axios
+- Backend: Node.js, Express, MongoDB/Mongoose
+
+---
 
 ## License
 MIT

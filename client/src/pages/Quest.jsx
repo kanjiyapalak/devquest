@@ -47,7 +47,8 @@ export default function Quest() {
         topicId,
         level,
         correctCount,
-        total,
+  total,
+  answers,
       });
       setResult(data);
     } catch (e) {
