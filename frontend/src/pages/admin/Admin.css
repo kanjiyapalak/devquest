@@ -1,5 +1,8 @@
 /* Modern Color Palette with Gradients */
 :root {
+  /* Brand (solid, non-gradient) */
+  --brand: #7F56D9;
+  --brand-dark: #6a4cc7;
   /* Gradient Colors */
   --gradient-primary: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   --gradient-secondary: linear-gradient(135deg, #f6d365 0%, #fda085 100%);
@@ -96,13 +99,20 @@ body { background: #f7f7fb; color: var(--text); }
 .dashboard-card:hover { box-shadow: 0 6px 24px rgba(139, 92, 246, 0.15); transform: translateY(-2px); }
 .users-table th { background: var(--primary-light); color: #4f46e5; }
 
-/* Buttons */
-.search-button, .submit-btn, .create-quest-btn {
-  background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%);
+/* Buttons (override to solid brand color, no gradients) */
+.search-button, .create-quest-btn {
+  background: var(--brand);
   color: #fff;
 }
-.search-button:hover, .submit-btn:hover, .create-quest-btn:hover {
-  filter: brightness(1.05);
+.search-button:hover, .create-quest-btn:hover {
+  background: var(--brand-dark);
+}
+.submit-btn {
+  background: var(--primary);
+  color: #fff;
+}
+.submit-btn:hover {
+  background: var(--primary-dark);
 }
 .action-btn { border: 1px solid #e5e7eb; background: #f9fafb; }
 .action-btn:hover { background: #eef2ff; border-color: #c7d2fe; }
@@ -215,6 +225,17 @@ body {
   background: #f7f9fc;
 }
 /* Additional styles can be added here */
+
+/* ---- Final explicit overrides (ensure solid brand colors) ---- */
+.create-quest-btn,
+.search-button {
+  background: var(--brand) !important;
+  color: #fff !important;
+}
+.create-quest-btn:hover,
+.search-button:hover {
+  background: var(--brand-dark) !important;
+}
 
 .admin-logo:hover h2::after {
   width: 80px;
@@ -338,27 +359,26 @@ body {
   background-color: rgba(255, 255, 255, 0.8);
 }
 
-.header-left h1 {
+/* Admin header title: solid color (no gradient) */
+.header-left .admin-title {
   margin: 0;
   font-size: 1.5rem;
-  color: var(--text);
-  font-weight: 700;
-  background: linear-gradient(90deg, var(--primary), var(--secondary));
-  -webkit-background-clip: text;
-  background-clip: text;
-  -webkit-text-fill-color: transparent;
+  color: var(--brand);
+  font-weight: 800;
+  background: none;
+  -webkit-text-fill-color: initial;
   position: relative;
   display: inline-block;
 }
 
-.header-left h1::after {
+.header-left .admin-title::after {
   content: '';
   position: absolute;
   bottom: -5px;
   left: 0;
   width: 40px;
   height: 3px;
-  background: linear-gradient(90deg, var(--primary), var(--secondary));
+  background: var(--brand);
   border-radius: 3px;
 }
 

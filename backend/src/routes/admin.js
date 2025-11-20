@@ -184,4 +184,44 @@ router.get('/users', adminAuth, async (req, res) => {
   }
 });
 
+// // Update a user's role (admin only)
+// router.put('/users/:id/role', adminAuth, async (req, res) => {
+//   try {
+//     const { id } = req.params;
+//     const { role } = req.body || {};
+//     if (!role || !['user', 'admin'].includes(role)) {
+//       return res.status(400).json({ message: 'Invalid role' });
+//     }
+//     const user = await User.findById(id);
+//     if (!user) return res.status(404).json({ message: 'User not found' });
+//     // Prevent demoting last admin or unsafe self-demotion without checks (basic guard)
+//     if (String(req.user._id) === String(user._id) && role !== 'admin') {
+//       return res.status(400).json({ message: 'Admins cannot remove their own admin role' });
+//     }
+//     user.role = role;
+//     await user.save();
+//     res.json({ id: user._id, role: user.role });
+//   } catch (error) {
+//     console.error('Error updating user role:', error);
+//     res.status(500).json({ message: 'Error updating user role' });
+//   }
+// });
+
+// Delete a user (admin only)
+router.delete('/users/:id', adminAuth, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const user = await User.findById(id);
+    if (!user) return res.status(404).json({ message: 'User not found' });
+    if (user.role === 'admin') {
+      return res.status(403).json({ message: 'Cannot delete an admin account' });
+    }
+    await User.findByIdAndDelete(id);
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Error deleting user:', error);
+    res.status(500).json({ message: 'Error deleting user' });
+  }
+});
+
 export default router;

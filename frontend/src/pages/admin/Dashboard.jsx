@@ -92,11 +92,6 @@ const AdminDashboard = () => {
             <div className="card-number">
               {stats.loading ? 'Loading...' : stats.totalUsers.toLocaleString()}
             </div>
-            <div className="card-footer">
-              <span className="trend up">
-                <FaChartLine /> 12% from last month
-              </span>
-            </div>
           </div>
         </div>
 
@@ -108,11 +103,6 @@ const AdminDashboard = () => {
             <h3>Total Quests</h3>
             <div className="card-number">
               {stats.loading ? 'Loading...' : stats.totalQuests.toLocaleString()}
-            </div>
-            <div className="card-footer">
-              <span className="trend up">
-                <FaChartLine /> 5 new this week
-              </span>
             </div>
           </div>
         </div>

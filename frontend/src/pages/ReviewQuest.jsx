@@ -75,6 +75,7 @@ export default function ReviewQuest() {
         <nav className="db-nav">
           <button className="db-nav-item" onClick={() => navigate('/home')}>🏠 Dashboard</button>
           <button className="db-nav-item" onClick={() => navigate('/my-quests')}>📑 My Quests</button>
+          <button className="db-nav-item" onClick={() => navigate('/profile')}>👤 Profile</button>
           <button className="db-nav-item" onClick={() => navigate('/activity')}>📈 Activity</button>
           <button className="db-nav-item" onClick={() => navigate('/help')}>❓ Help & FAQ</button>
           <button className="db-nav-item" onClick={handleLogout}>🚪 Logout</button>

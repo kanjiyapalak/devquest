@@ -80,28 +80,28 @@ const Users = () => {
     }
   };
 
-  const handleRoleChange = async (userId, newRole) => {
-    try {
-      const token = localStorage.getItem('token');
-      await api.put(
-        `/admin/users/${userId}/role`, 
-        { role: newRole },
-        {
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
-          }
-        }
-      );
-      // Update the local state to reflect the change immediately
-      setUsers(users.map(user => 
-        user._id === userId ? { ...user, role: newRole } : user
-      ));
-    } catch (error) {
-      console.error('Error updating user role:', error);
-      setError('Failed to update user role. Please try again.');
-    }
-  };
+  // const handleRoleChange = async (userId, newRole) => {
+  //   try {
+  //     const token = localStorage.getItem('token');
+  //     await api.put(
+  //       `/admin/users/${userId}/role`, 
+  //       { role: newRole },
+  //       {
+  //         headers: {
+  //           'Content-Type': 'application/json',
+  //           'Authorization': `Bearer ${token}`
+  //         }
+  //       }
+  //     );
+  //     // Update the local state to reflect the change immediately
+  //     setUsers(users.map(user => 
+  //       user._id === userId ? { ...user, role: newRole } : user
+  //     ));
+  //   } catch (error) {
+  //     console.error('Error updating user role:', error);
+  //     setError('Failed to update user role. Please try again.');
+  //   }
+  // };
 
   const handleDeleteUser = async (userId) => {
     if (window.confirm('Are you sure you want to delete this user? This action cannot be undone.')) {
@@ -181,7 +181,6 @@ const Users = () => {
                     <th>Name</th>
                     <th>Email</th>
                     <th>Role</th>
-                    <th>Joined</th>
                     <th>Actions</th>
                   </tr>
                 </thead>
@@ -190,26 +189,18 @@ const Users = () => {
                     <tr key={user._id}>
                       <td>{user.name}</td>
                       <td>{user.email}</td>
-                      <td>
-                        <select
-                          value={user.role}
-                          onChange={(e) => handleRoleChange(user._id, e.target.value)}
-                          className="role-select"
-                        >
-                          <option value="user">User</option>
-                          <option value="admin">Admin</option>
-                        </select>
-                      </td>
-                      <td>{new Date(user.createdAt).toLocaleDateString()}</td>
+                      <td>{(user.role || '').toUpperCase()}</td>
                       <td className="actions">
-                        <button
-                          type="button"
-                          onClick={() => handleDeleteUser(user._id)}
-                          className="action-button delete"
-                          title="Delete User"
-                        >
-                          <FaTrash />
-                        </button>
+                        {user.role !== 'admin' && (
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteUser(user._id)}
+                            className="action-button delete"
+                            title="Delete User"
+                          >
+                            <FaTrash />
+                          </button>
+                        )}
                       </td>
                     </tr>
                   ))}
